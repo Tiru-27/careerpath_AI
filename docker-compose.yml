@@ -1,0 +1,23 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: careerpath
+      POSTGRES_USER: careerpath
+      POSTGRES_PASSWORD: careerpath_dev_only
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+  api:
+    build: ./backend
+    environment:
+      DATABASE_URL: postgresql+psycopg://careerpath:careerpath_dev_only@db:5432/careerpath
+      JWT_SECRET: replace-this-with-a-long-random-secret
+      CORS_ORIGINS: http://localhost:8501,http://localhost:3000
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+volumes:
+  postgres_data:

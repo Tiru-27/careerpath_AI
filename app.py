@@ -44,6 +44,54 @@ CAREERS = {
 
 ALIASES = {"python":"Python", "sql":"SQL", "mysql":"SQL", "postgresql":"SQL", "excel":"Excel", "power bi":"Power BI", "powerbi":"Power BI", "tableau":"Tableau", "javascript":"JavaScript", "js":"JavaScript", "html":"HTML/CSS", "css":"HTML/CSS", "react":"React", "reactjs":"React", "node":"Node.js", "node.js":"Node.js", "nodejs":"Node.js", "git":"Git", "github":"Git", "linux":"Linux", "docker":"Docker", "cloud":"Cloud", "aws":"Cloud", "azure":"Cloud", "ci/cd":"CI/CD", "cicd":"CI/CD", "machine learning":"Machine Learning", "ml":"Machine Learning", "statistics":"Statistics", "communication":"Communication", "business analysis":"Business Analysis", "api":"APIs", "apis":"APIs"}
 
+# Curated student-facing guidance.  Certification details are deliberately limited
+# to information published by the provider; an empty/variable price is not guessed.
+CAREER_GUIDE = {
+    "Data Analyst": {
+        "overview": "Data analysts turn data into evidence for business decisions, using queries, spreadsheets and clear visual stories.",
+        "tools": ["Excel", "SQL", "Power BI", "Tableau", "Python"],
+        "interviews": ["Explain one dashboard decision", "Practise SQL joins and aggregations", "Tell a concise data-to-recommendation story"],
+        "certifications": [
+            {"name": "Google Data Analytics Certificate", "provider": "Google Career Certificates", "level": "Foundational", "prerequisites": "No experience or degree required; Google notes high-school-level maths is sufficient.", "time": "About 3–6 months (Google estimates about 240 hours).", "cost": "US/Canada: US$49/month after a 7-day trial; local pricing may differ.", "link": "https://grow.google/certificates/data-analytics/", "skills": ["Spreadsheets", "SQL", "Tableau", "R", "data cleaning", "data storytelling"], "why": "A structured entry point with a shareable case study for an early portfolio."},
+            {"name": "Microsoft Certified: Power BI Data Analyst Associate (PL-300)", "provider": "Microsoft", "level": "Associate", "prerequisites": "Practical Power Query and DAX proficiency is expected by the exam audience profile.", "time": "Microsoft does not prescribe a preparation duration; use its study guide and practice assessment to plan your study.", "cost": "Listed at US$165; the proctored-exam price varies by country/region.", "link": "https://learn.microsoft.com/en-us/credentials/certifications/data-analyst-associate/", "skills": ["Data preparation", "data modelling", "DAX", "visualisation", "Power BI security"], "why": "Useful when a role specifically uses Power BI and you can demonstrate dashboard work alongside it."},
+        ],
+    },
+    "Full-Stack Developer": {
+        "overview": "Full-stack developers build and maintain user-facing applications, APIs and the data layer that connects them.",
+        "tools": ["HTML/CSS", "JavaScript", "React", "Node.js", "SQL", "Git"],
+        "interviews": ["Build and explain a small feature", "Practise JavaScript and API fundamentals", "Walk through trade-offs in a deployed project"],
+        "certifications": [
+            {"name": "Meta Front-End Developer Professional Certificate", "provider": "Meta on Coursera", "level": "Beginner", "prerequisites": "No degree or prior experience required.", "time": "Coursera lists 7 months at 6 hours/week; it is self-paced.", "cost": "See Coursera enrolment options; the provider page does not give one universal price.", "link": "https://www.coursera.org/professional-certificates/meta-front-end-developer", "skills": ["HTML", "CSS", "JavaScript", "React", "responsive layouts", "portfolio projects"], "why": "Useful for building a visible front-end foundation; pair it with an API and database project for full-stack evidence."},
+            {"name": "AWS Certified Cloud Practitioner", "provider": "Amazon Web Services", "level": "Foundational", "prerequisites": "AWS positions it as a starting point, including for people with no prior IT or cloud experience.", "time": "AWS provides an exam-prep plan but does not state one required study duration.", "cost": "US$100 exam fee; foreign-exchange and local details are on AWS pricing pages.", "link": "https://aws.amazon.com/certification/certified-cloud-practitioner/", "skills": ["Cloud concepts", "AWS services", "security", "pricing", "support"], "why": "Helpful for understanding the cloud vocabulary behind deployment; it does not replace software projects."},
+        ],
+    },
+    "ML Engineer": {
+        "overview": "ML engineers turn data and models into dependable software systems that can be evaluated, deployed and maintained.",
+        "tools": ["Python", "SQL", "scikit-learn", "Git", "APIs", "experiment tracking"],
+        "interviews": ["Explain validation and leakage", "Defend a model metric", "Discuss how you would deploy and monitor a model"],
+        "certifications": [
+            {"name": "Google Advanced Data Analytics Certificate", "provider": "Google Career Certificates", "level": "Advanced", "prerequisites": "Foundational data-analytics knowledge is assumed; Google suggests its Data Analytics Certificate for newcomers.", "time": "3–6 months, according to Google.", "cost": "Check the enrolment page for current local pricing; no single global price is published on the overview page.", "link": "https://grow.google/certificates/data-analytics/?advanced=", "skills": ["Python", "Jupyter Notebook", "statistics", "regression", "machine learning", "Tableau"], "why": "A guided bridge from analysis into modelling; an end-to-end deployment project should still be your central proof of engineering ability."},
+            {"name": "Microsoft Certified: Azure AI Fundamentals (AI-900)", "provider": "Microsoft", "level": "Fundamentals", "prerequisites": "No formal prerequisite is listed; it is a fundamentals credential.", "time": "Microsoft does not prescribe a preparation duration; use the official learning resources and practice assessment.", "cost": "Listed at US$99; the proctored-exam price varies by country/region.", "link": "https://learn.microsoft.com/en-us/credentials/certifications/azure-ai-fundamentals/", "skills": ["AI concepts", "responsible AI", "Azure AI services", "generative AI basics"], "why": "Useful for cloud-AI vocabulary, but it is introductory rather than evidence of production ML engineering."},
+        ],
+    },
+    "Business Analyst": {
+        "overview": "Business analysts clarify needs, align stakeholders and turn evidence into requirements and recommendations.",
+        "tools": ["Excel", "SQL", "Power BI", "requirements documents", "process maps", "presentations"],
+        "interviews": ["Structure a vague business problem", "Explain a stakeholder trade-off", "Present a concise requirements or dashboard case"],
+        "certifications": [
+            {"name": "Entry Certificate in Business Analysis (ECBA)", "provider": "International Institute of Business Analysis (IIBA)", "level": "Entry", "prerequisites": "No specific eligibility requirements; candidates must agree to IIBA's code and certification terms.", "time": "IIBA does not publish a standard preparation duration; its Learning Journey and practice exam can guide a personal study plan.", "cost": "Up to US$395 including membership, exam and practice exam; IIBA lists student prices from US$315, region-dependent.", "link": "https://www.iiba.org/business-analysis-certifications/ecba/", "skills": ["Business analysis foundations", "requirements", "stakeholder communication", "business analysis practices"], "why": "A role-aligned entry credential; use a process-improvement or requirements case study to make it concrete."},
+        ],
+    },
+    "DevOps Engineer": {
+        "overview": "DevOps engineers improve the reliability and repeatability of software delivery through automation, infrastructure and observability.",
+        "tools": ["Linux", "Git", "Docker", "CI/CD", "cloud platforms", "monitoring"],
+        "interviews": ["Explain a CI/CD pipeline", "Debug a deployment scenario", "Discuss logging, metrics and safe rollback"],
+        "certifications": [
+            {"name": "AWS Certified Cloud Practitioner", "provider": "Amazon Web Services", "level": "Foundational", "prerequisites": "AWS positions it as a starting point, including for people with no prior IT or cloud experience.", "time": "AWS provides an exam-prep plan but does not state one required study duration.", "cost": "US$100 exam fee; foreign-exchange and local details are on AWS pricing pages.", "link": "https://aws.amazon.com/certification/certified-cloud-practitioner/", "skills": ["Cloud concepts", "AWS services", "security", "pricing", "support"], "why": "A sensible cloud baseline before deeper platform credentials; a working pipeline and containerised deployment matter more for a DevOps portfolio."},
+        ],
+    },
+}
+
 # Short evidence-based questions used to validate skills mentioned in a resume.
 # This is intentionally a knowledge check, not an identity or proctoring system.
 QUESTION_BANK = {
@@ -85,6 +133,7 @@ h1,h2,h3 { font-family:'Plus Jakarta Sans',sans-serif !important; letter-spacing
 .chip { display:inline-block; margin:0 .38rem .42rem 0; padding:.36rem .66rem; border-radius:999px; font-size:.82rem; font-weight:700; }.chip.have { background:#dcfce7; color:#157a42; }.chip.gap { background:#fff0ed; color:#bd4b35; }.chip.neutral { background:#eef2ff; color:#4f46e5; }
 .role-card { background:#fff; border:1px solid var(--line); border-radius:18px; padding:1.2rem; margin-bottom:.8rem; }.role-card.top { border:2px solid #7775ff; box-shadow:0 10px 24px rgba(79,70,229,.10); }.score { color:#4f46e5; font:800 1.55rem 'Plus Jakarta Sans'; float:right; }
 .roadmap { border-left:3px solid #817df4; padding-left:1.25rem; margin:.2rem 0 .3rem .65rem; }.roadmap-card { position:relative; background:#fff; border:1px solid var(--line); border-radius:16px; padding:1rem 1.1rem; margin:0 0 1rem; }.roadmap-card:before { content:''; position:absolute; width:13px; height:13px; background:#6962e9; border-radius:50%; left:-1.72rem; top:1.25rem; border:4px solid var(--paper); }.month { color:#4f46e5; font-weight:800; font-size:.78rem; text-transform:uppercase; letter-spacing:.08em; }.small { color:var(--muted); font-size:.9rem; }
+.guide-card { background:#fff; border:1px solid var(--line); border-radius:16px; padding:1rem 1.1rem; margin:.55rem 0; }.guide-card h4 { margin:.1rem 0 .4rem; }.guide-label { color:var(--muted); font-weight:800; font-size:.74rem; letter-spacing:.06em; text-transform:uppercase; }.notice { border-left:4px solid #0ea5a4; background:#ecfeff; border-radius:0 12px 12px 0; padding:.8rem 1rem; color:#155e75; font-size:.9rem; }
 /* Streamlit renders buttons differently across releases: style each path explicitly. */
 .stButton>button, .stDownloadButton>button { background:linear-gradient(135deg,#625bf6,#4338ca) !important; color:#fff !important; border:1px solid #5b54e6 !important; border-radius:11px !important; font-weight:800 !important; padding:.58rem 1rem !important; box-shadow:0 6px 14px rgba(79,70,229,.17); transition:transform .15s ease,box-shadow .15s ease; }
 .stButton>button:hover, .stDownloadButton>button:hover { color:#fff !important; transform:translateY(-1px); box-shadow:0 9px 18px rgba(79,70,229,.24); }
@@ -98,7 +147,7 @@ div[data-testid="stFileUploader"] button { background:#eef2ff !important; color:
 st.markdown(CSS, unsafe_allow_html=True)
 
 def init_state():
-    defaults = {"skills": [], "scores": [], "selected_career": None, "profile": {}, "analysed": False, "completed": set(), "mock_result": None, "resume_received": False, "pending_skills": [], "pending_scores": [], "show_mock": False}
+    defaults = {"skills": [], "scores": [], "selected_career": None, "profile": {}, "analysed": False, "completed": set(), "mock_result": None, "resume_received": False, "pending_skills": [], "pending_scores": [], "show_mock": False, "raw_resume_text": ""}
     for key, value in defaults.items():
         if key not in st.session_state: st.session_state[key] = value
 
@@ -125,6 +174,40 @@ def gap_data(career):
     gaps = [skill for skill in required if skill not in st.session_state.skills]
     readiness = round(100 * len(have) / len(required))
     return required, have, gaps, readiness
+
+def resume_coach(text, career):
+    """Transparent rubric; this is preparation guidance, not an ATS prediction."""
+    text = text or ""
+    lower = text.lower()
+    required, have, gaps, _ = gap_data(career)
+    has_headline = any(word in lower for word in ["summary", "profile", "objective"])
+    has_projects = any(word in lower for word in ["project", "portfolio", "github"])
+    has_experience = any(word in lower for word in ["experience", "internship", "work history"])
+    has_education = any(word in lower for word in ["education", "university", "college", "b.tech", "bachelor"])
+    has_metrics = bool(re.search(r"\b\d+(?:\.\d+)?\s*(?:%|users|hours|days|projects|clients|records|rows)\b", lower))
+    has_link = bool(re.search(r"(?:github\.com|linkedin\.com|https?://)", lower))
+    alignment = round(25 * len(have) / len(required))
+    sections = 5 * sum([has_headline, has_projects, has_experience, has_education])
+    score = min(100, alignment + sections + (20 if has_metrics else 0) + (15 if has_link else 0) + 20)
+    suggestions = []
+    if not has_headline: suggestions.append(f"Add a 2–3 line summary tailored to {career}, using your strongest verified skills.")
+    if not has_projects: suggestions.append("Add a Projects section with problem, action, tools, result and a portfolio/GitHub link.")
+    if not has_metrics: suggestions.append("Quantify impact where truthful: dataset size, speed improvement, users, accuracy or project scope.")
+    if not has_link: suggestions.append("Add one working GitHub, portfolio or LinkedIn link near your contact details.")
+    if gaps: suggestions.append(f"Do not claim unbuilt skills as strengths; instead show a project plan for {', '.join(gaps[:2])}.")
+    return score, suggestions, {"Summary": has_headline, "Projects": has_projects, "Experience": has_experience, "Education": has_education, "Measured impact": has_metrics, "Portfolio link": has_link}
+
+def capstone_blueprint(career, skills, gaps):
+    guide = CAREER_GUIDE[career]
+    toolset = list(dict.fromkeys(skills + guide["tools"]))[:5]
+    focus = ", ".join(gaps[:2]) if gaps else "your strongest role skills"
+    return {
+        "title": f"{career} Evidence Project",
+        "problem": f"Choose a small real-world problem and demonstrate {focus} through a measurable solution.",
+        "deliverables": ["One-page problem brief with assumptions", "Working project or analysis", "README explaining tools, decisions and limitations", "Two-minute demo or project walkthrough"],
+        "tools": toolset,
+        "success": "A reviewer can understand the problem, inspect the evidence and see your personal contribution in under five minutes.",
+    }
 
 def hero(title, subtitle):
     st.markdown(f"<section class='hero'><div class='eyebrow'>CareerPath AI · Student career copilot</div><h1>{title}</h1><p>{subtitle}</p></section>", unsafe_allow_html=True)
@@ -190,7 +273,7 @@ with st.sidebar:
     else:
         st.caption("Start from Analyze to unlock your personalised dashboard.")
 
-tabs = st.tabs(["✨ Analyze", "🎯 Career Match", "📊 Skill Gap", "🗺️ Roadmap", "🧪 Mock Test", "🚀 Progress"])
+tabs = st.tabs(["✨ Analyze", "🎯 Career Match", "📊 Skill Gap", "🗺️ Roadmap", "🧪 Mock Test", "🚀 Progress", "📄 Resume Coach", "🧩 Portfolio Lab"])
 
 with tabs[0]:
     hero("Turn your profile into a career plan.", "Upload a resume or add skills. CareerPath makes your strongest next move visible in minutes.")
@@ -210,6 +293,7 @@ with tabs[0]:
                     # Hold career results until the resume skill check is submitted.
                     st.session_state.pending_skills = found
                     st.session_state.pending_scores = calculate_scores(found)
+                    st.session_state.raw_resume_text = text
                     st.session_state.selected_career = st.session_state.pending_scores[0][0]
                     st.session_state.resume_received = True
                     st.session_state.mock_result = None
@@ -248,6 +332,11 @@ with tabs[1]:
             if st.button(f"Use {career} as my target", key=f"target_{career}", type="primary" if career == st.session_state.selected_career else "secondary"):
                 st.session_state.selected_career = career
                 st.rerun()
+        selected_guide = CAREER_GUIDE[st.session_state.selected_career]
+        with st.expander(f"Explore {st.session_state.selected_career} before choosing it"):
+            st.write(selected_guide["overview"])
+            st.markdown("**Common tools and technologies**")
+            st.markdown(chips(selected_guide["tools"], "neutral"), unsafe_allow_html=True)
 
 with tabs[2]:
     hero("Make your next skill move obvious.", "A transparent comparison between your current strengths and the capabilities your target role requires.")
@@ -255,7 +344,10 @@ with tabs[2]:
         show_empty("Your skill-gap report will appear here", "Complete your analysis first to compare your profile with a target role.")
     else:
         career = st.session_state.selected_career
+        guide = CAREER_GUIDE[career]
         required, have, gaps, readiness = gap_data(career)
+        st.markdown(f"<div class='notice'><b>Career overview:</b> {guide['overview']}</div>", unsafe_allow_html=True)
+        st.markdown("<br>", unsafe_allow_html=True)
         a, b, c = st.columns([.9, 1.1, 1.1], gap="large")
         with a:
             st.markdown(f"<div class='card'><div class='metric-label'>{career}</div><div class='metric-value'>{readiness}%</div><div class='metric-note'>role readiness today</div></div>", unsafe_allow_html=True)
@@ -284,11 +376,12 @@ with tabs[2]:
         st.download_button("Download skill-gap report", report, file_name=f"careerpath_{career.lower().replace(' ', '_')}_report.txt", mime="text/plain")
 
 with tabs[3]:
-    hero("Your personalised six-month roadmap.", "Each month turns a career goal into one focused learning outcome and one proof-of-work project.")
+    hero("Your personalised six-month roadmap.", "Build skills, create evidence and choose certifications only when they strengthen your story—not as a substitute for projects.")
     if not st.session_state.analysed:
         show_empty("Your roadmap will appear here", "Analyse your profile first. It takes less than a minute.")
     else:
         career = st.session_state.selected_career
+        guide = CAREER_GUIDE[career]
         _, _, gaps, readiness = gap_data(career)
         st.markdown(f"<div class='card'><div class='metric-label'>Target role · {career}</div><div class='metric-value'>From {readiness}% to application-ready</div><div class='metric-note'>Your priority skills: {', '.join(gaps[:3]) if gaps else 'Keep building your portfolio and interview confidence.'}</div></div>", unsafe_allow_html=True)
         st.markdown("<br>", unsafe_allow_html=True)
@@ -298,6 +391,42 @@ with tabs[3]:
             mark = "✅ Completed" if done else "Next milestone"
             st.markdown(f"<div class='roadmap-card'><div class='month'>Month {number} · {phase}</div><h3>{focus}</h3><p class='small'>{detail}</p><p><b>Proof of work:</b> {project}</p><span class='chip {'have' if done else 'neutral'}'>{mark}</span></div>", unsafe_allow_html=True)
         st.markdown("</div>", unsafe_allow_html=True)
+        st.markdown("### Recommended certifications")
+        st.markdown("<div class='notice'><b>How to use this list:</b> These are curated learning and certification options for this path. Details below come from the provider pages linked in the app. Prices, availability and objectives can change—always confirm them with the provider before paying.</div>", unsafe_allow_html=True)
+        for cert in guide["certifications"]:
+            with st.expander(f"{cert['name']} · {cert['level']}", expanded=False):
+                st.markdown(f"<div class='guide-card'><div class='guide-label'>Provider</div><h4>{cert['provider']}</h4><p><b>Why it is useful:</b> {cert['why']}</p></div>", unsafe_allow_html=True)
+                left, right = st.columns(2)
+                with left:
+                    st.markdown("**Level**")
+                    st.write(cert["level"])
+                    st.markdown("**Prerequisites**")
+                    st.write(cert["prerequisites"])
+                    st.markdown("**Estimated preparation time**")
+                    st.write(cert["time"])
+                with right:
+                    st.markdown("**Approximate cost**")
+                    st.write(cert["cost"])
+                    st.markdown("**Skills covered**")
+                    st.markdown(chips(cert["skills"], "neutral"), unsafe_allow_html=True)
+                    st.link_button("Open official provider page ↗", cert["link"], use_container_width=True)
+        st.markdown("### Interview preparation")
+        st.caption("Use your roadmap projects as examples; certifications support, but do not replace, clear evidence of ability.")
+        for prompt in guide["interviews"]:
+            st.markdown(f"- {prompt}")
+        st.markdown("### Progression milestones")
+        milestones = [
+            ("Foundation", "Understand the core tools and explain basic concepts."),
+            ("Proof", "Complete the roadmap project and document what you decided and learned."),
+            ("Application-ready", "Publish 2 relevant projects, tailor your resume and practise role-specific interview questions."),
+        ]
+        milestone_cols = st.columns(3)
+        for col, (label, detail) in zip(milestone_cols, milestones):
+            with col:
+                st.markdown(f"<div class='guide-card'><div class='guide-label'>{label}</div><p class='small'>{detail}</p></div>", unsafe_allow_html=True)
+        with st.expander("Prototype scope: what is live vs planned"):
+            st.markdown("**Implemented now:** curated role data, keyword-based skill detection, explainable matching, a skill-gap view, roadmap projects, progress tracking, and the official-link certification guidance above.")
+            st.markdown("**Planned / not connected:** live job-market data, provider catalogue APIs, automatic price updates, credential verification, embeddings/vector search, LLM-generated roadmaps, and a production backend.")
 
 with tabs[4]:
     hero("Evidence behind your resume.", "Your skill check opens automatically after a resume is submitted. Here you can review the result and use it to improve your preparation.")
@@ -356,6 +485,56 @@ with tabs[5]:
             st.markdown("#### Final readiness checklist")
             st.markdown(chips(["Roadmap momentum", "Portfolio proof", "Targeted resume", "Public profile", "Interview practice"], "neutral"), unsafe_allow_html=True)
             st.caption("Aim for 75%+ before a focused internship application sprint.")
+
+with tabs[6]:
+    hero("Make your resume easier to trust.", "A transparent, role-aware checklist that turns your current resume into stronger interview evidence.")
+    if not st.session_state.analysed:
+        show_empty("Your resume review will appear here", "Analyse a resume first so CareerPath can tailor the review to a target role.")
+    else:
+        career = st.session_state.selected_career
+        score, suggestions, checks = resume_coach(st.session_state.raw_resume_text, career)
+        left, right = st.columns([.78, 1.22], gap="large")
+        with left:
+            st.markdown(f"<div class='card'><div class='metric-label'>Resume evidence score</div><div class='metric-value'>{score}%</div><div class='metric-note'>Preparation rubric for {career}</div></div>", unsafe_allow_html=True)
+            st.progress(score / 100)
+            st.caption("This is not a prediction of any employer’s ATS decision.")
+        with right:
+            st.markdown("#### Evidence checklist")
+            checklist_html = "".join(f"<span class='chip {'have' if value else 'gap'}'>{'✓' if value else '→'} {label}</span>" for label, value in checks.items())
+            st.markdown(checklist_html, unsafe_allow_html=True)
+            st.markdown("#### Highest-impact edits")
+            for suggestion in suggestions:
+                st.markdown(f"- {suggestion}")
+        _, have, gaps, _ = gap_data(career)
+        st.markdown("#### Role-targeted summary starter")
+        strength_text = ", ".join(have[:3]) or "relevant foundation skills"
+        gap_text = ", ".join(gaps[:2]) or "a portfolio project"
+        st.code(f"Aspiring {career} with hands-on experience in {strength_text}. Building evidence through practical projects and currently strengthening {gap_text}.", language=None)
+
+with tabs[7]:
+    hero("Turn learning into proof of ability.", "Build one explainable capstone that gives judges, recruiters and interviewers something concrete to evaluate.")
+    if not st.session_state.analysed:
+        show_empty("Your capstone blueprint will appear here", "Complete your analysis first to create a role-specific project brief.")
+    else:
+        career = st.session_state.selected_career
+        _, have, gaps, _ = gap_data(career)
+        blueprint = capstone_blueprint(career, have, gaps)
+        st.markdown(f"<div class='notice'><b>CareerPath evidence engine:</b> Rather than only recommending courses, this converts the target role and your gaps into a project a reviewer can inspect.</div>", unsafe_allow_html=True)
+        st.markdown(f"### {blueprint['title']}")
+        left, right = st.columns(2, gap="large")
+        with left:
+            st.markdown("**Project challenge**")
+            st.write(blueprint["problem"])
+            st.markdown("**Suggested toolkit**")
+            st.markdown(chips(blueprint["tools"], "neutral"), unsafe_allow_html=True)
+        with right:
+            st.markdown("**Definition of done**")
+            st.write(blueprint["success"])
+            st.markdown("**Evidence to publish**")
+            for item in blueprint["deliverables"]:
+                st.markdown(f"- {item}")
+        st.markdown("#### Judge-ready project narrative")
+        st.info("“CareerPath does not stop at a score. It identifies a gap, prescribes a focused learning path, and asks the student to produce inspectable evidence before claiming readiness.”")
 
 # Kept at the end of the script so the modal overlays the fully rendered app.
 if st.session_state.resume_received and not st.session_state.analysed and st.session_state.show_mock:
