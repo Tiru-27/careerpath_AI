@@ -2,7 +2,12 @@ __pycache__/
 *.py[cod]
 .venv/
 .env
+.env.*
+!.env.example
 careerpath.db
+*.db
 .pytest_cache/
 node_modules/
 .next/
+uploads/
+tmp/

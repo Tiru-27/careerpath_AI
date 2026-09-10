@@ -15,6 +15,12 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+      - name: Install Streamlit dependencies
+        working-directory: .
+        run: pip install -r requirements.txt
       - run: pip install -r requirements.txt
       - run: pytest
       - run: python -m compileall app
+      - name: Compile Streamlit entry point
+        working-directory: .
+        run: python -m py_compile app.py

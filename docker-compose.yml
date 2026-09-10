@@ -2,22 +2,29 @@ services:
   db:
     image: postgres:16-alpine
     environment:
-      POSTGRES_DB: careerpath
-      POSTGRES_USER: careerpath
-      POSTGRES_PASSWORD: careerpath_dev_only
+      POSTGRES_DB: ${POSTGRES_DB:-careerpath}
+      POSTGRES_USER: ${POSTGRES_USER:-careerpath}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env before starting Compose}
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-careerpath} -d ${POSTGRES_DB:-careerpath}"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
   api:
     build: ./backend
     environment:
-      DATABASE_URL: postgresql+psycopg://careerpath:careerpath_dev_only@db:5432/careerpath
-      JWT_SECRET: replace-this-with-a-long-random-secret
-      CORS_ORIGINS: http://localhost:8501,http://localhost:3000
+      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-careerpath}:${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env before starting Compose}@db:5432/${POSTGRES_DB:-careerpath}
+      JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET in .env before starting Compose}
+      ENVIRONMENT: ${ENVIRONMENT:-production}
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:8501}
     ports:
       - "8000:8000"
     depends_on:
-      - db
+      db:
+        condition: service_healthy
 volumes:
   postgres_data:

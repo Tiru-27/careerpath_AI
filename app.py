@@ -1,13 +1,20 @@
+import os
 import re
 from datetime import date
+from urllib.parse import quote_plus
 
+import requests
 import streamlit as st
 from pypdf import PdfReader
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 
 
-st.set_page_config(page_title="CareerPath AI", page_icon="🎯", layout="wide", initial_sidebar_state="expanded")
+st.set_page_config(page_title="CareerPulse", page_icon="🎯", layout="wide", initial_sidebar_state="expanded")
+
+API_BASE_URL = os.getenv("CAREERPATH_API_URL", "http://localhost:8000/api/v1").rstrip("/")
+MAX_RESUME_BYTES = 10 * 1024 * 1024
+MAX_RESUME_PAGES = 25
 
 CAREERS = {
     "Data Analyst": {
@@ -40,6 +47,25 @@ CAREERS = {
         "keywords": ["linux", "git", "docker", "cloud", "ci/cd", "cicd", "python", "aws", "azure", "devops"],
         "roadmap": [("Build foundations", "Linux + Git", "Learn shell basics and reliable version control.", "Version a small project."), ("Package apps", "Docker", "Containerise a simple application.", "Create a Docker image."), ("Automate delivery", "CI/CD", "Create an automated build and test pipeline.", "Set up GitHub Actions."), ("Deploy", "Cloud", "Deploy an app to a cloud platform.", "Deploy a container."), ("Observe", "Monitoring", "Learn logging, metrics and alerts.", "Add basic monitoring."), ("Launch", "DevOps capstone", "Build a complete deployment pipeline.", "Present your pipeline.")],
     },
+}
+
+LEARNING_RESOURCES = {
+    "Excel": {"title": "Excel for Beginners", "channel": "freeCodeCamp.org", "video_id": "Vl0H-qTclOg", "description": "Build the spreadsheet foundations used in analysis and reporting."},
+    "Statistics": {"title": "Statistics for Data Science", "channel": "freeCodeCamp.org", "video_id": "xxpc-HPKN28", "description": "Review the statistics concepts behind evidence-led decisions."},
+    "SQL": {"title": "SQL Full Course for Beginners", "channel": "freeCodeCamp.org", "video_id": "HXV3zeQKqGY", "description": "Practise queries, joins and aggregations for real datasets."},
+    "Power BI": {"title": "Power BI Full Course", "channel": "Simplilearn", "video_id": "AGrl-H87pRU", "description": "Learn the dashboard and reporting workflow for business metrics."},
+    "Python": {"title": "Python for Beginners", "channel": "freeCodeCamp.org", "video_id": "rfscVS0vtbw", "description": "Strengthen Python fundamentals before working with data or models."},
+    "HTML/CSS": {"title": "HTML and CSS Full Course", "channel": "SuperSimpleDev", "video_id": "G3e-cpL7ofc", "description": "Create responsive page structure and styling for web projects."},
+    "Git": {"title": "Git and GitHub for Beginners", "channel": "Kunal Kushwaha", "video_id": "RGOj5yH7evk", "description": "Build reliable version-control habits and publish your work."},
+    "JavaScript": {"title": "JavaScript Algorithms and Data Structures", "channel": "freeCodeCamp.org", "video_id": "PkZNo7MFNFg", "description": "Learn the language fundamentals needed for interactive interfaces."},
+    "React": {"title": "React Course for Beginners", "channel": "freeCodeCamp.org", "video_id": "bMknfKXIFA8", "description": "Understand components, state and the foundations of React apps."},
+    "Node.js": {"title": "Node.js and Express Full Course", "channel": "freeCodeCamp.org", "video_id": "Oe421EPjeBE", "description": "Build server-side JavaScript services and API foundations."},
+    "Machine Learning": {"title": "Machine Learning for Everybody", "channel": "freeCodeCamp.org", "video_id": "i_LwzRVP7bg", "description": "Learn the model-building workflow from data to evaluation."},
+    "Docker": {"title": "Docker Tutorial for Beginners", "channel": "TechWorld with Nana", "video_id": "fqMOX6JJhGo", "description": "Package applications consistently for development and deployment."},
+    "Linux": {"title": "Linux for Beginners", "channel": "freeCodeCamp.org", "video_id": "sWbUDq4S6Y8", "description": "Practise the command-line foundations used in delivery work."},
+    "Cloud": {"title": "AWS Cloud Practitioner Full Course", "channel": "freeCodeCamp.org", "video_id": "SOTamWNgDKc", "description": "Build a practical baseline in cloud concepts and services."},
+    "CI/CD": {"title": "GitHub Actions CI/CD Tutorial", "channel": "TechWorld with Nana", "video_id": "R8_veQiYBjI", "description": "Automate testing and delivery with a modern CI/CD workflow."},
+    "APIs": {"title": "REST API Tutorial", "channel": "Web Dev Simplified", "video_id": "qbLc5a9jdXo", "description": "Understand how clients and services exchange structured data."},
 }
 
 ALIASES = {"python":"Python", "sql":"SQL", "mysql":"SQL", "postgresql":"SQL", "excel":"Excel", "power bi":"Power BI", "powerbi":"Power BI", "tableau":"Tableau", "javascript":"JavaScript", "js":"JavaScript", "html":"HTML/CSS", "css":"HTML/CSS", "react":"React", "reactjs":"React", "node":"Node.js", "node.js":"Node.js", "nodejs":"Node.js", "git":"Git", "github":"Git", "linux":"Linux", "docker":"Docker", "cloud":"Cloud", "aws":"Cloud", "azure":"Cloud", "ci/cd":"CI/CD", "cicd":"CI/CD", "machine learning":"Machine Learning", "ml":"Machine Learning", "statistics":"Statistics", "communication":"Communication", "business analysis":"Business Analysis", "api":"APIs", "apis":"APIs"}
@@ -139,20 +165,154 @@ h1,h2,h3 { font-family:'Plus Jakarta Sans',sans-serif !important; letter-spacing
 .stButton>button:hover, .stDownloadButton>button:hover { color:#fff !important; transform:translateY(-1px); box-shadow:0 9px 18px rgba(79,70,229,.24); }
 .stButton>button[kind="secondary"], [data-testid="stBaseButton-secondary"] { background:#fff !important; color:#4f46e5 !important; border:1px solid #d9d8ff !important; box-shadow:none !important; }
 div[data-testid="stFileUploader"] button { background:#eef2ff !important; color:#4f46e5 !important; border:1px solid #d9d8ff !important; box-shadow:none !important; }
-[data-testid="stProgressBar"]>div>div { background:linear-gradient(90deg,#4f46e5,#14b8a6); } [data-testid="stTabs"] button { font-weight:750 !important; color:#5b657b !important; }
+[data-testid="stProgressBar"]>div>div { background:linear-gradient(90deg,#4f46e5,#14b8a6); } [data-testid="stTabs"] [role="tablist"] { gap:.45rem; border-bottom:1px solid #e7eaf2; } [data-testid="stTabs"] button { min-height:4.35rem !important; padding:.55rem .7rem .65rem !important; border-radius:12px 12px 0 0 !important; color:#4d5870 !important; font-weight:900 !important; transition:background .15s ease,color .15s ease,transform .15s ease; } [data-testid="stTabs"] button:hover { background:#eef2ff !important; color:#4f46e5 !important; transform:translateY(-1px); } [data-testid="stTabs"] button p { display:block !important; white-space:normal !important; text-align:center !important; line-height:1.35 !important; font-weight:900 !important; color:inherit !important; } [data-testid="stTabs"] button[aria-selected="true"] { background:#eef2ff !important; color:#4f46e5 !important; box-shadow:inset 0 -3px 0 #4f46e5; } [data-testid="stTabs"] button:nth-child(7), [data-testid="stTabs"] button:nth-child(7) p { color:#4f46e5 !important; }
 .momentum-map { display:grid; grid-template-columns:1fr 1fr 1fr; gap:.55rem; margin:1rem 0 1.4rem; }.momentum-step { border-radius:16px; padding:1rem; background:#fff; border:1px solid var(--line); }.momentum-step b { display:block; font-family:'Plus Jakarta Sans'; font-size:1rem; margin:.3rem 0; }.momentum-step.active { background:linear-gradient(145deg,#5350d9,#25296d); border-color:#5350d9; }.momentum-step.active,.momentum-step.active * { color:#fff !important; }.momentum-step .eyebrow { color:#4f46e5 !important; }.momentum-step.active .eyebrow { color:#b8f7ee !important; }
-@media(max-width:700px) { .hero { padding:1.5rem; }.hero h1 { font-size:1.65rem !important; }.momentum-map { grid-template-columns:1fr; } }
+.login-shell { max-width:1040px; margin:7vh auto 0; padding:2.6rem; background:linear-gradient(135deg,#151a35 0%,#30388a 58%,#4f46e5 100%); border-radius:28px; box-shadow:0 24px 60px rgba(37,44,99,.18); }
+.login-brand { color:#fff; padding:1.6rem 2rem; background:linear-gradient(145deg,#202753,#4f46e5); border-radius:22px; min-height:360px; }.login-brand h1 { color:#fff !important; font-size:2.6rem !important; line-height:1.08; margin:.8rem 0 1rem; font-weight:800 !important; }.login-brand p { color:#e5e9ff; max-width:390px; font-size:1rem; line-height:1.65; font-weight:600; }.login-brand .eyebrow { color:#b8f7ee !important; font-weight:800; }.login-point { display:flex; gap:.7rem; align-items:flex-start; color:#f2f5ff; margin:1.1rem 0; font-size:.9rem; font-weight:600; }.login-point b { display:block; color:#fff; margin-bottom:.15rem; font-weight:800; }.login-point span { color:#d6dcf7; font-weight:600; }.login-mark { display:inline-grid; place-items:center; width:2.8rem; height:2.8rem; border-radius:13px; background:#fff; color:#4f46e5; font-size:1.35rem; box-shadow:0 10px 22px rgba(0,0,0,.14); }
+.login-card { background:#fff; border-radius:20px; padding:1.7rem 1.8rem .9rem; }.login-card h2 { margin:.2rem 0 .35rem; font-size:1.45rem !important; }.login-card p { color:var(--muted); margin-top:0; }.login-card [data-testid="stForm"] { border:0; padding:0; }.login-card [data-testid="stFormSubmitButton"] button { min-height:2.8rem; }.login-demo { color:#788399; font-size:.78rem; text-align:center; margin-top:.8rem; }
+.login-card-header { padding:.2rem .2rem .45rem; }.login-card-header h2 { margin:.25rem 0 .35rem !important; font-size:1.45rem !important; }.login-card-header p { color:var(--muted); margin:0; font-weight:600; }
+div[data-testid="stVerticalBlockBorderWrapper"] { border:1px solid #e2e6f1 !important; border-radius:22px !important; background:rgba(255,255,255,.88) !important; box-shadow:0 18px 42px rgba(35,44,86,.09) !important; padding:.6rem !important; }
+div[data-testid="stForm"] div[data-testid="stTextInput"] > div, div[data-testid="stForm"] [data-baseweb="input"] { position:relative; background:#fff !important; border:1px solid #dfe3ee !important; border-radius:10px !important; overflow:hidden; } div[data-testid="stForm"] div[data-testid="stTextInput"] input, div[data-testid="stForm"] [data-baseweb="input"] input { width:100% !important; min-width:0 !important; flex:1 1 auto !important; background:#fff !important; color:var(--ink) !important; border:0 !important; box-shadow:none !important; font-weight:600 !important; padding-right:3rem !important; } div[data-testid="stForm"] div[data-testid="stTextInput"] input::placeholder, div[data-testid="stForm"] [data-baseweb="input"] input::placeholder { color:#7a8498 !important; opacity:1 !important; font-weight:600 !important; } div[data-testid="stForm"] div[data-testid="stTextInput"] button, div[data-testid="stForm"] [data-baseweb="input"] button { position:absolute !important; right:0 !important; top:0 !important; height:100% !important; flex:0 0 2.75rem !important; width:2.75rem !important; min-width:2.75rem !important; padding:0 !important; background:#fff !important; color:#68738a !important; border:0 !important; box-shadow:none !important; } .stForm label { color:var(--ink) !important; font-weight:800 !important; } div[data-testid="stFormSubmitButton"] button { background:linear-gradient(135deg,#625bf6,#4338ca) !important; color:#fff !important; border:1px solid #5b54e6 !important; font-weight:800 !important; letter-spacing:.01em; }
+.auth-mode { display:flex; gap:.75rem; align-items:center; margin:1.1rem 0 .8rem; }.auth-mode-icon { display:grid; place-items:center; width:2rem; height:2rem; border-radius:9px; background:#eef2ff; color:#4f46e5; font-weight:800; }.auth-mode b { display:block; color:var(--ink); font-size:.95rem; font-weight:800; }.auth-mode span:last-child { display:block; color:#5f6b82; font-size:.78rem; margin-top:.15rem; font-weight:600; }.auth-note { display:flex; gap:.5rem; align-items:center; padding:.7rem .8rem; margin-top:1rem; border:1px solid #e6e8f2; border-radius:10px; color:#5f6b82; font-size:.76rem; background:#fafbfe; font-weight:600; }.auth-note strong { color:#4f46e5; }.auth-help { color:#5f6b82; font-size:.78rem; margin:.2rem 0 1rem; font-weight:600; }
+@media(max-width:700px) { .hero { padding:1.5rem; }.hero h1 { font-size:1.65rem !important; }.momentum-map { grid-template-columns:1fr; }.login-shell { margin:1rem auto 0; padding:1.2rem; border-radius:20px; }.login-brand { padding:1rem .3rem 1.3rem; }.login-brand h1 { font-size:2rem !important; }.login-card { padding:1.35rem 1.1rem .8rem; } }
+
+/* Shared product UI layer: keeps every existing page in one visual system. */
+:root { --ink:#18233d; --muted:#66728a; --brand:#5146e5; --brand-deep:#242052; --aqua:#0ca6a6; --paper:#f6f8fc; --line:#e4e9f3; --soft:#eef2ff; --shadow:0 12px 30px rgba(35,44,86,.07); --shadow-hover:0 18px 38px rgba(53,63,122,.12); }
+.stApp { background:radial-gradient(circle at 8% 4%,rgba(112,124,255,.13),transparent 25rem),radial-gradient(circle at 94% 38%,rgba(20,184,166,.08),transparent 22rem),linear-gradient(180deg,#fbfcff 0%,#f5f7fb 100%); }
+section.main > div { max-width:1500px; padding-top:1.1rem; }
+h1,h2,h3,h4 { color:var(--ink) !important; font-weight:800 !important; }
+h2 { margin-top:1.65rem !important; } h3 { margin-top:1.25rem !important; } h4 { margin-top:.8rem !important; }
+p,li,.stMarkdown { color:#354159; }
+[data-testid="stSidebar"] { background:linear-gradient(180deg,#171c36 0%,#252957 100%); border-right:1px solid rgba(255,255,255,.08); box-shadow:8px 0 32px rgba(25,31,72,.10); }
+[data-testid="stSidebar"] [data-testid="stMarkdownContainer"] p { color:#dce3ff !important; }
+[data-testid="stSidebar"] .stTextInput input { background:#303866 !important; border:1px solid #505b91 !important; color:#fff !important; }
+[data-testid="stSidebar"] [data-testid="stSelectbox"] div { color:#fff !important; }
+.hero { position:relative; overflow:hidden; background:linear-gradient(125deg,#171b3a 0%,#303887 60%,#5146e5 100%); border:1px solid rgba(255,255,255,.10); border-radius:22px; padding:2.15rem 2.35rem; margin:0 0 1.65rem; box-shadow:0 18px 38px rgba(38,45,103,.18); }
+.hero:after { content:''; position:absolute; width:17rem; height:17rem; right:-5rem; top:-8rem; border:1px solid rgba(184,247,238,.28); border-radius:50%; box-shadow:0 0 0 2.2rem rgba(184,247,238,.05),0 0 0 4.4rem rgba(184,247,238,.035); }
+.hero h1 { position:relative; z-index:1; max-width:850px; font-size:clamp(1.75rem,3vw,2.55rem) !important; line-height:1.12; }
+.hero p { position:relative; z-index:1; max-width:760px; color:#d9e0ff !important; font-weight:600; line-height:1.6; }
+.eyebrow { position:relative; z-index:1; font-weight:900 !important; }
+.card,.role-card,.roadmap-card,.guide-card { background:rgba(255,255,255,.92); border:1px solid var(--line); border-radius:14px; box-shadow:var(--shadow); transition:transform .18s ease,box-shadow .18s ease,border-color .18s ease; }
+.card:hover,.role-card:hover,.guide-card:hover { transform:translateY(-2px); box-shadow:var(--shadow-hover); border-color:#d4d9f5; }
+.card { padding:1.2rem 1.3rem; min-height:112px; }
+.metric-label,.guide-label { color:#77839a; font-weight:900; letter-spacing:.08em; }
+.metric-value { color:var(--ink); font-size:1.75rem; }
+.metric-note,.small { color:#66728a; line-height:1.5; }
+.role-card { padding:1.25rem 1.35rem; margin-bottom:.9rem; }
+.role-card.top { border:2px solid #7c78ee; background:linear-gradient(145deg,#fff,#f6f5ff); box-shadow:0 14px 30px rgba(81,70,229,.12); }
+.score { color:var(--brand); font-size:1.7rem; }
+.chip { border:1px solid transparent; font-weight:800; }
+.chip.have { background:#e5f9ee; border-color:#c6efd9; color:#147a48; }.chip.gap { background:#fff0ec; border-color:#ffd8cf; color:#ba4a35; }.chip.neutral { background:#eef1ff; border-color:#dfe2ff; color:#4d47c7; }
+.roadmap { border-left:3px solid #817cf0; padding-left:1.35rem; margin:1rem 0 .5rem .7rem; }
+.roadmap-card { padding:1.15rem 1.25rem; margin-bottom:1.1rem; }
+.roadmap-card:before { background:#5b54e6; box-shadow:0 0 0 5px rgba(91,84,230,.10); }
+.month { color:var(--brand); font-weight:900; }
+.notice { background:#effcfc; border:1px solid #c9eeee; border-left:4px solid var(--aqua); color:#155e75; box-shadow:none; }
+.momentum-map { gap:.8rem; }.momentum-step { border:1px solid var(--line); box-shadow:var(--shadow); }.momentum-step.active { background:linear-gradient(145deg,#5751df,#25295f); box-shadow:0 14px 28px rgba(57,57,153,.18); }
+.stButton>button,.stDownloadButton>button,[data-testid="stFormSubmitButton"] button { min-height:2.75rem; border-radius:10px !important; font-weight:900 !important; letter-spacing:.01em; }
+.stButton>button:focus-visible,.stDownloadButton>button:focus-visible,input:focus-visible { outline:3px solid rgba(20,184,166,.28) !important; outline-offset:2px; }
+div[data-testid="stFileUploader"] { padding:1rem; background:linear-gradient(145deg,#fafbff,#f3f5ff); border:1px dashed #aaa9e9; border-radius:14px; }
+div[data-testid="stTextArea"] textarea,div[data-testid="stTextInput"] input { border-radius:10px !important; border-color:#dce2ee !important; background:#fff !important; }
+div[data-testid="stTextArea"] textarea:focus,div[data-testid="stTextInput"] input:focus { border-color:#817cf0 !important; box-shadow:0 0 0 3px rgba(81,70,229,.10) !important; }
+[data-testid="stTabs"] [role="tablist"] { padding:.35rem .7rem; background:rgba(255,255,255,.72); border:1px solid var(--line); border-radius:15px; box-shadow:0 8px 22px rgba(35,44,86,.05); overflow-x:auto; scrollbar-width:thin; gap:1.65rem !important; }
+[data-testid="stTabs"] [role="tablist"] { justify-content:flex-start !important; }
+[data-testid="stTabs"] button { min-width:118px !important; min-height:4.4rem !important; margin:0 !important; padding-left:1.15rem !important; padding-right:1.15rem !important; border-radius:11px !important; }
+[data-testid="stTabs"] [role="tablist"] > button + button { margin-left:1.4rem !important; }
+[data-testid="stTabs"] button[aria-selected="true"] { background:linear-gradient(145deg,#eef0ff,#e2e5ff) !important; box-shadow:inset 0 -3px 0 var(--brand),0 4px 12px rgba(81,70,229,.08) !important; }
+[data-testid="stExpander"] { border:1px solid var(--line) !important; border-radius:12px !important; background:rgba(255,255,255,.75) !important; overflow:hidden; }
+[data-testid="stExpander"] summary { font-weight:800 !important; color:var(--ink) !important; }
+[data-testid="stProgressBar"] { background:#e9edf5; border-radius:99px; overflow:hidden; }
+[data-testid="stProgressBar"]>div>div { border-radius:99px; }
+[data-testid="stCheckbox"] label,[data-testid="stSlider"] label,[data-testid="stRadio"] label { font-weight:700 !important; color:var(--ink) !important; }
+[data-testid="stDialog"] { border:1px solid #dfe3f4 !important; border-radius:20px !important; box-shadow:0 24px 70px rgba(27,35,83,.25) !important; background:#fbfcff !important; }
+[data-testid="stDialog"] [data-testid="stForm"] { padding:1rem !important; border:1px solid #e5e8f3 !important; border-radius:15px !important; background:#fff !important; }
+[data-testid="stDialog"] [data-testid="stRadio"] > div { gap:.55rem !important; }
+[data-testid="stDialog"] [data-testid="stRadio"] label { padding:.7rem .85rem !important; border:1px solid #e1e5f0 !important; border-radius:10px !important; background:#fbfcff !important; transition:background .15s ease,border-color .15s ease,transform .15s ease; }
+[data-testid="stDialog"] [data-testid="stRadio"] label:hover { background:#eef1ff !important; border-color:#aaa8ed !important; transform:translateY(-1px); }
+[data-testid="stDialog"] [data-testid="stFormSubmitButton"] button { margin-top:.8rem; min-height:3rem; }
+[data-testid="stDialog"] [data-testid="stCaptionContainer"] { color:#68738a !important; font-weight:600 !important; }
+[data-testid="stProgressBar"] { min-height:.55rem; }
+.learning-heading { margin:.95rem 0 .65rem; color:#4f46e5; font-size:.78rem; font-weight:900; letter-spacing:.08em; text-transform:uppercase; }
+.learning-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:.75rem; margin-bottom:.35rem; }
+.learning-card { overflow:hidden; background:#fbfcff; border:1px solid #e2e6f2; border-radius:12px; box-shadow:0 5px 14px rgba(35,44,86,.04); }
+.learning-card img { display:block; width:100%; aspect-ratio:16/9; object-fit:cover; background:#eef1ff; }.learning-body { padding:.75rem .8rem .85rem; }.learning-title { color:var(--ink); font-weight:800; font-size:.9rem; line-height:1.3; }.learning-channel { color:#68738a; font-size:.72rem; font-weight:800; margin:.2rem 0 .45rem; }.learning-description { color:#5d6a82; font-size:.77rem; line-height:1.45; min-height:2.2rem; }.learning-link { display:inline-block; margin-top:.55rem; color:#4f46e5 !important; font-size:.78rem; font-weight:900; text-decoration:none; }.learning-link:hover { text-decoration:underline; }
+.mock-summary { display:grid; grid-template-columns:1.25fr repeat(3,1fr); gap:.75rem; margin:.2rem 0 1rem; }.mock-score-card,.mock-stat-card { background:#fff; border:1px solid var(--line); border-radius:14px; padding:1rem 1.1rem; box-shadow:var(--shadow); }.mock-score-card { background:linear-gradient(135deg,#eef0ff,#f8f8ff); border-color:#d9d9ff; }.mock-label { color:#737f97; font-size:.72rem; font-weight:900; letter-spacing:.08em; text-transform:uppercase; }.mock-score { color:#4f46e5; font:800 2.25rem 'Plus Jakarta Sans'; line-height:1.1; margin:.25rem 0; }.mock-stat-value { color:var(--ink); font:800 1.45rem 'Plus Jakarta Sans'; margin:.25rem 0; }.mock-stat-note { color:#68738a; font-size:.78rem; }.mock-result-note { color:#58657d; font-size:.85rem; line-height:1.45; }.question-review { padding:.85rem 1rem; margin:.55rem 0; background:#fff; border:1px solid var(--line); border-left:4px solid #d5dbea; border-radius:0 12px 12px 0; }.question-review.correct { border-left-color:#17a66a; }.question-review.incorrect { border-left-color:#dd654d; }.question-review-title { color:var(--ink); font-weight:800; }.question-review-answer { color:#68738a; font-size:.82rem; margin-top:.25rem; }.question-review-state { float:right; font-size:.75rem; font-weight:900; }.question-review-state.correct { color:#15803d; }.question-review-state.incorrect { color:#c2410c; }
+@media(max-width:900px) { section.main > div { padding-left:.8rem; padding-right:.8rem; }.hero { padding:1.55rem 1.35rem; }.card,.role-card,.roadmap-card,.guide-card { border-radius:12px; }.momentum-map { grid-template-columns:1fr; } }
+@media(max-width:700px) { .learning-grid,.mock-summary { grid-template-columns:1fr; }.mock-score-card { min-height:auto; } }
+
+/* Final presentation layer: one calm, consistent system across the existing app. */
+:root { --ink:#17233f; --muted:#64718a; --brand:#5146e5; --brand-2:#756df3; --aqua:#0eaaa5; --paper:#f7f9fd; --line:#e2e7f1; --surface:#ffffff; --radius-lg:18px; --radius-md:12px; --shadow-soft:0 10px 28px rgba(35,44,86,.065); }
+html,body { background:#f7f9fd !important; }
+.stApp { background:radial-gradient(700px 360px at 4% -4%,rgba(111,119,245,.12),transparent 70%),radial-gradient(620px 360px at 98% 42%,rgba(14,170,165,.075),transparent 70%),linear-gradient(180deg,#fbfcff 0%,#f5f7fb 100%) !important; }
+section.main > div { width:100%; max-width:1480px; padding:1.25rem clamp(.75rem,2.5vw,2.25rem) 3rem; }
+h1,h2,h3,h4 { color:var(--ink) !important; font-family:'Plus Jakarta Sans',sans-serif !important; font-weight:800 !important; letter-spacing:-.025em !important; }
+h1 { line-height:1.12 !important; } h2 { margin:1.45rem 0 .7rem !important; } h3 { margin:1.1rem 0 .5rem !important; } h4 { margin:.8rem 0 .35rem !important; }
+p,li { color:#394761; line-height:1.55; }
+.hero { min-height:150px; display:flex; flex-direction:column; justify-content:center; padding:2rem clamp(1.3rem,3vw,2.5rem); margin-bottom:1.7rem; border-radius:var(--radius-lg); background:linear-gradient(120deg,#171c3d 0%,#303987 58%,#5146e5 100%); box-shadow:0 18px 38px rgba(39,47,107,.17); }
+.hero:after { width:20rem; height:20rem; right:-7rem; top:-10rem; }
+.hero h1 { font-size:clamp(1.8rem,3vw,2.55rem) !important; max-width:900px; }
+.hero p { max-width:760px; margin:.5rem 0 0 !important; color:#dce3ff !important; opacity:1; font-weight:600; }
+.eyebrow { font-size:.7rem !important; font-weight:900 !important; letter-spacing:.13em !important; }
+.card,.role-card,.roadmap-card,.guide-card,.mock-score-card,.mock-stat-card { border-radius:var(--radius-md); border:1px solid var(--line); box-shadow:var(--shadow-soft); }
+.card,.role-card,.roadmap-card,.guide-card { background:rgba(255,255,255,.95); }
+.card { padding:1.2rem 1.3rem; min-height:112px; }.role-card { padding:1.25rem 1.35rem; }.roadmap-card { padding:1.2rem 1.3rem; }.guide-card { padding:1.05rem 1.2rem; }
+.card:hover,.role-card:hover,.guide-card:hover { border-color:#cfd5f4; box-shadow:0 16px 34px rgba(53,63,122,.11); transform:translateY(-2px); transition:all .18s ease; }
+.metric-label,.guide-label,.mock-label { color:#78849b; font-weight:900 !important; letter-spacing:.08em; }
+.metric-value { color:var(--ink); font-size:1.75rem; }.metric-note,.small { color:#64718a; }
+.chip { padding:.38rem .72rem; border-radius:999px; font-weight:800; }
+.stButton>button,.stDownloadButton>button,[data-testid="stFormSubmitButton"] button { min-height:2.8rem !important; padding:.62rem 1.05rem !important; border-radius:10px !important; font-weight:900 !important; box-shadow:0 6px 14px rgba(79,70,229,.14) !important; }
+.stButton>button:hover,.stDownloadButton>button:hover,[data-testid="stFormSubmitButton"] button:hover { transform:translateY(-1px); box-shadow:0 10px 20px rgba(79,70,229,.2) !important; }
+[data-testid="stTabs"] [role="tablist"] { display:flex !important; align-items:stretch !important; justify-content:flex-start !important; gap:1rem !important; padding:.45rem .6rem !important; margin-bottom:1.35rem; overflow-x:auto !important; border:1px solid #e0e5f0 !important; border-radius:16px !important; background:rgba(255,255,255,.78) !important; box-shadow:0 8px 22px rgba(35,44,86,.05) !important; }
+[data-testid="stTabs"] [role="tab"] { flex:0 0 auto !important; min-width:120px !important; min-height:4.55rem !important; margin:0 !important; padding:.65rem .85rem !important; display:flex !important; align-items:center !important; justify-content:center !important; border-radius:11px !important; color:#536078 !important; }
+[data-testid="stTabs"] [role="tab"] + [role="tab"] { margin-left:0 !important; }
+[data-testid="stTabs"] [role="tab"] p { display:flex !important; flex-direction:column !important; align-items:center !important; justify-content:center !important; gap:.38rem !important; line-height:1.1 !important; white-space:normal !important; text-align:center !important; color:inherit !important; font-size:.78rem !important; font-weight:900 !important; }
+[data-testid="stTabs"] [role="tab"] p strong { display:block !important; order:0 !important; color:inherit !important; font-weight:900 !important; }
+[data-testid="stTabs"] [role="tab"] p > :last-child { display:block !important; order:1 !important; font-size:1.12rem !important; line-height:1 !important; }
+[data-testid="stTabs"] [role="tab"]:hover { background:#f0f2ff !important; color:var(--brand) !important; transform:translateY(-1px); }
+[data-testid="stTabs"] [role="tab"][aria-selected="true"] { background:linear-gradient(145deg,#eef0ff,#e3e5ff) !important; color:var(--brand) !important; box-shadow:inset 0 -3px 0 var(--brand),0 5px 14px rgba(81,70,229,.09) !important; }
+[data-testid="stSidebar"] { background:linear-gradient(180deg,#171c38,#252957) !important; }
+[data-testid="stSidebar"] [data-testid="stMarkdownContainer"] p { color:#dce3ff !important; }
+[data-testid="stSidebar"] input,[data-testid="stSidebar"] [data-baseweb="select"] { background:#303866 !important; border-color:#535f97 !important; color:#fff !important; }
+[data-testid="stExpander"] { border:1px solid var(--line) !important; border-radius:var(--radius-md) !important; background:rgba(255,255,255,.8) !important; }
+[data-testid="stExpander"] summary { padding:.8rem 1rem !important; color:var(--ink) !important; font-weight:800 !important; }
+div[data-testid="stFileUploader"] { padding:1rem !important; border:1px dashed #aaa9e9 !important; border-radius:var(--radius-md) !important; background:linear-gradient(145deg,#fcfcff,#f3f5ff) !important; }
+div[data-testid="stTextArea"] textarea,div[data-testid="stTextInput"] input { min-height:2.8rem; border-radius:10px !important; border-color:#dce2ee !important; }
+[data-testid="stProgressBar"] { min-height:.55rem; border-radius:99px; overflow:hidden; background:#e9edf5; }
+[data-testid="stProgressBar"]>div>div { border-radius:99px; }
+
+/* Auth surface: native Streamlit blocks stay inside one restrained product card. */
+div[data-testid="stVerticalBlockBorderWrapper"] { width:100% !important; padding:1.45rem !important; border:1px solid #e0e5f1 !important; border-radius:22px !important; background:rgba(255,255,255,.92) !important; box-shadow:0 20px 48px rgba(35,44,86,.1) !important; }
+.login-brand { min-height:420px; padding:2rem 2.2rem; border-radius:20px; background:linear-gradient(145deg,#1b2149,#4f46e5); box-shadow:0 18px 36px rgba(46,51,130,.18); }
+.login-brand h1 { margin:.85rem 0 1rem; font-size:clamp(2rem,3.5vw,2.75rem) !important; }
+.login-brand p { color:#e2e7ff; max-width:410px; }
+.login-point { margin:1.35rem 0; }
+.login-card-header { padding:.1rem .2rem .65rem; }.login-card-header h2 { font-size:1.5rem !important; margin:.3rem 0 .35rem !important; }.login-card-header p { color:var(--muted); font-weight:600; }
+.auth-mode { margin:1rem 0 .7rem; }.auth-help { margin-bottom:.9rem; }
+div[data-testid="stForm"] div[data-testid="stTextInput"] > div,div[data-testid="stForm"] [data-baseweb="input"] { min-height:2.8rem; border:1px solid #dce2ee !important; border-radius:10px !important; background:#fff !important; }
+div[data-testid="stForm"] [data-baseweb="input"] input { min-width:0 !important; padding-right:3.2rem !important; background:#fff !important; color:var(--ink) !important; }
+div[data-testid="stForm"] [data-baseweb="input"] input::placeholder { color:#7a8498 !important; opacity:1 !important; }
+div[data-testid="stForm"] [data-baseweb="input"] button { width:2.8rem !important; min-width:2.8rem !important; right:0 !important; background:#fff !important; color:#64718a !important; }
+.auth-note { margin-top:1rem; border-color:#e2e6f1; background:#f8f9fd; }
+@media(max-width:900px) { section.main > div { padding-left:.8rem; padding-right:.8rem; }.login-brand { min-height:auto; }.hero { padding:1.6rem 1.3rem; } }
+@media(max-width:700px) { [data-testid="stTabs"] [role="tablist"] { gap:.55rem !important; padding:.35rem !important; } [data-testid="stTabs"] [role="tab"] { min-width:105px !important; min-height:4.35rem !important; } div[data-testid="stVerticalBlockBorderWrapper"] { padding:1rem !important; border-radius:16px !important; } }
 </style>
 """
 st.markdown(CSS, unsafe_allow_html=True)
 
 def init_state():
-    defaults = {"skills": [], "scores": [], "selected_career": None, "profile": {}, "analysed": False, "completed": set(), "mock_result": None, "resume_received": False, "pending_skills": [], "pending_scores": [], "show_mock": False, "raw_resume_text": ""}
+    defaults = {"authenticated": False, "access_token": "", "user_email": "", "skills": [], "scores": [], "selected_career": None, "profile": {}, "analysed": False, "completed": set(), "mock_result": None, "resume_received": False, "pending_skills": [], "pending_scores": [], "show_mock": False, "raw_resume_text": ""}
     for key, value in defaults.items():
         if key not in st.session_state: st.session_state[key] = value
 
 def extract_pdf_text(file):
-    return "\n".join(page.extract_text() or "" for page in PdfReader(file).pages)
+    if getattr(file, "size", 0) > MAX_RESUME_BYTES:
+        raise ValueError("Resume files must be 10 MB or smaller.")
+    reader = PdfReader(file)
+    if reader.is_encrypted:
+        raise ValueError("Encrypted PDF files are not supported.")
+    if len(reader.pages) > MAX_RESUME_PAGES:
+        raise ValueError("Resume files must contain 25 pages or fewer.")
+    return "\n".join(page.extract_text() or "" for page in reader.pages)
 
 def detect_skills(text):
     return sorted({skill for alias, skill in ALIASES.items() if re.search(r"(?<!\w)" + re.escape(alias) + r"(?!\w)", text.lower())})
@@ -209,8 +369,135 @@ def capstone_blueprint(career, skills, gaps):
         "success": "A reviewer can understand the problem, inspect the evidence and see your personal contribution in under five minutes.",
     }
 
+def roadmap_learning_resources(career, focus):
+    focus_lower = focus.lower()
+    resources = []
+    for skill, resource in LEARNING_RESOURCES.items():
+        if skill.lower() in focus_lower or (skill == "Machine Learning" and "ml" in focus_lower):
+            resources.append(resource)
+    if resources:
+        return resources[:2]
+    query = quote_plus(f"{career} {focus} tutorial")
+    return [{
+        "title": f"{focus} learning search",
+        "channel": "YouTube educational search",
+        "video_id": None,
+        "url": f"https://www.youtube.com/results?search_query={query}",
+        "description": f"Find a focused {focus} lesson aligned to this {career} milestone.",
+    }]
+
+def mock_performance(score):
+    if score >= 81:
+        return "Excellent", "Strong command of the checked concepts.", "have"
+    if score >= 61:
+        return "Good", "A solid foundation with a few concepts to reinforce.", "have"
+    if score >= 41:
+        return "Developing", "Review the missed concepts before claiming strong proficiency.", "neutral"
+    return "Needs improvement", "Use the roadmap to rebuild these foundations step by step.", "gap"
+
 def hero(title, subtitle):
-    st.markdown(f"<section class='hero'><div class='eyebrow'>CareerPath AI · Student career copilot</div><h1>{title}</h1><p>{subtitle}</p></section>", unsafe_allow_html=True)
+    st.markdown(f"<section class='hero'><div class='eyebrow'>CareerPulse · Know Your Skills. Find Your Direction.</div><h1>{title}</h1><p>{subtitle}</p></section>", unsafe_allow_html=True)
+
+def api_error(response):
+    try:
+        detail = response.json().get("detail")
+    except ValueError:
+        detail = None
+    return detail or f"The account service returned HTTP {response.status_code}."
+
+def authenticate(email, password):
+    response = requests.post(
+        f"{API_BASE_URL}/auth/token",
+        data={"username": email, "password": password},
+        timeout=10,
+    )
+    if not response.ok:
+        raise ValueError(api_error(response))
+    return response.json()
+
+def register_account(email, password, display_name):
+    response = requests.post(
+        f"{API_BASE_URL}/auth/register",
+        json={"email": email, "password": password, "display_name": display_name or None},
+        timeout=10,
+    )
+    if not response.ok:
+        raise ValueError(api_error(response))
+    return response.json()
+
+def start_authenticated_session(email, token):
+    st.session_state.authenticated = True
+    st.session_state.access_token = token
+    st.session_state.user_email = email
+    st.rerun()
+
+def render_login_page():
+    left, right = st.columns([1.05, .95], gap="large", vertical_alignment="top")
+    with left:
+        st.markdown("""
+        <div class='login-brand'>
+            <div class='login-mark'>🎯</div>
+            <div class='eyebrow' style='margin-top:1.2rem'>CareerPulse · Know Your Skills. Find Your Direction.</div>
+            <h1>Make your next move count.</h1>
+            <p>Turn your current skills into a clear, evidence-led path toward the role you want.</p>
+            <div class='login-point'><b>01</b><div><b>Know your direction</b><span>See explainable career matches built around your strengths.</span></div></div>
+            <div class='login-point'><b>02</b><div><b>Build with momentum</b><span>Follow a practical roadmap with visible proof of progress.</span></div></div>
+        </div>
+        """, unsafe_allow_html=True)
+    with right:
+        with st.container(border=True):
+            st.markdown("<div class='login-card-header'><div class='eyebrow' style='color:#4f46e5 !important'>Secure workspace</div><h2>Your career plan starts here</h2><p>Use your account to access your personalised workspace.</p></div>", unsafe_allow_html=True)
+            sign_in, create_account = st.tabs(["↪  Sign in", "＋  Create account"])
+            with sign_in:
+                st.markdown("<div class='auth-mode'><span class='auth-mode-icon'>↪</span><div><b>Sign in to your workspace</b><span>Continue where you left off.</span></div></div>", unsafe_allow_html=True)
+                st.markdown("<div class='auth-help'>Use the email and password connected to your CareerPulse account.</div>", unsafe_allow_html=True)
+                with st.form("login_form"):
+                    email = st.text_input("Email", placeholder="you@example.com")
+                    password = st.text_input("Password", type="password", placeholder="Enter your password")
+                    submitted = st.form_submit_button("Sign in", type="primary", use_container_width=True)
+                st.markdown("<div class='auth-note'>🔒 <span>Your account details are handled by the CareerPulse API.</span></div>", unsafe_allow_html=True)
+                if submitted:
+                    normalized_email = email.strip().lower()
+                    if not normalized_email or not password:
+                        st.warning("Enter both your email and password to sign in.")
+                    else:
+                        try:
+                            auth = authenticate(normalized_email, password)
+                            start_authenticated_session(normalized_email, auth["access_token"])
+                        except requests.RequestException:
+                            st.error("We could not reach the account service. Start the CareerPulse API and try again.")
+                        except (ValueError, KeyError) as exc:
+                            if str(exc) == "Incorrect email or password":
+                                st.error("That email and password do not match an account. Use the exact password you registered, or create a new account.")
+                            else:
+                                st.error(str(exc))
+            with create_account:
+                st.markdown("<div class='auth-mode'><span class='auth-mode-icon'>＋</span><div><b>Create your career workspace</b><span>Save your progress under your own account.</span></div></div>", unsafe_allow_html=True)
+                st.markdown("<div class='auth-help'>Use a valid email and choose a password with at least 8 characters.</div>", unsafe_allow_html=True)
+                with st.form("register_form"):
+                    display_name = st.text_input("Name", placeholder="Your name")
+                    new_email = st.text_input("Email", placeholder="you@example.com")
+                    new_password = st.text_input("Password", type="password", placeholder="At least 8 characters")
+                    confirm_password = st.text_input("Confirm password", type="password", placeholder="Repeat your password")
+                    registered = st.form_submit_button("Create account", type="primary", use_container_width=True)
+                st.markdown("<div class='auth-note'>✨ <span>One account gives you a personal starting point for your career plan.</span></div>", unsafe_allow_html=True)
+                if registered:
+                    normalized_email = new_email.strip().lower()
+                    if new_password != confirm_password:
+                        st.error("Passwords do not match.")
+                    elif len(new_password) < 8:
+                        st.error("Use a password with at least 8 characters.")
+                    else:
+                        try:
+                            auth = register_account(normalized_email, new_password, display_name.strip())
+                            start_authenticated_session(normalized_email, auth["access_token"])
+                        except requests.RequestException:
+                            st.error("We could not reach the account service. Start the CareerPulse API and try again.")
+                        except (ValueError, KeyError) as exc:
+                            if str(exc) == "An account already exists for this email":
+                                st.info("This email already has an account. Open the **Sign in** tab and use that account instead.")
+                            else:
+                                st.error(str(exc))
 
 def chips(items, kind="neutral"):
     return "".join(f"<span class='chip {kind}'>{item}</span>" for item in items) or "<span class='small'>Nothing to show yet.</span>"
@@ -256,8 +543,19 @@ def resume_mock_dialog():
 
 init_state()
 
+if not st.session_state.authenticated:
+    render_login_page()
+    st.stop()
+
 with st.sidebar:
-    st.markdown("## 🎯 CareerPath AI")
+    st.markdown("## 🎯 CareerPulse")
+    st.caption(st.session_state.user_email)
+    if st.button("Sign out", use_container_width=True):
+        st.session_state.authenticated = False
+        st.session_state.access_token = ""
+        st.session_state.user_email = ""
+        st.rerun()
+    st.divider()
     st.caption("Your path from potential to placement.")
     st.divider()
     st.markdown("**STUDENT PROFILE**")
@@ -273,10 +571,10 @@ with st.sidebar:
     else:
         st.caption("Start from Analyze to unlock your personalised dashboard.")
 
-tabs = st.tabs(["✨ Analyze", "🎯 Career Match", "📊 Skill Gap", "🗺️ Roadmap", "🧪 Mock Test", "🚀 Progress", "📄 Resume Coach", "🧩 Portfolio Lab"])
+tabs = st.tabs(["**Analyze**  \n✨", "**Career Match**  \n🎯", "**Skill Gap**  \n📊", "**Roadmap**  \n🗺️", "**Mock Test**  \n🧪", "**Progress**  \n🚀", "**Resume Coach**  \n📄", "**Portfolio Lab**  \n🧩"])
 
 with tabs[0]:
-    hero("Turn your profile into a career plan.", "Upload a resume or add skills. CareerPath makes your strongest next move visible in minutes.")
+    hero("Turn your profile into a career plan.", "Upload a resume or add skills. CareerPulse makes your strongest next move visible in minutes.")
     left, right = st.columns([1.08, .92], gap="large")
     with left:
         st.markdown("### Start with what you have")
@@ -303,8 +601,8 @@ with tabs[0]:
                     for state_key in [key for key in st.session_state if key.startswith("mock_")]:
                         del st.session_state[state_key]
                     st.rerun()
-            except Exception as exc:
-                st.error(f"We could not read that PDF. Please try another text-based PDF or paste your skills. ({exc})")
+            except Exception:
+                st.error("We could not read that PDF. Please try another text-based PDF or paste your skills.")
     with right:
         st.markdown("### What you’ll get")
         st.markdown("<div class='card'><div class='metric-label'>1 · Career direction</div><div class='metric-note'>Explainable role matches, not a black box.</div><br><div class='metric-label'>2 · Skill-gap clarity</div><div class='metric-note'>Know exactly what to keep and what to learn next.</div><br><div class='metric-label'>3 · Six-month momentum</div><div class='metric-note'>A practical roadmap with portfolio outcomes.</div></div>", unsafe_allow_html=True)
@@ -372,7 +670,7 @@ with tabs[2]:
             status = "✓ Ready" if skill in have else "→ Build next"
             colour = "#15803d" if skill in have else "#c2410c"
             st.markdown(f"<div class='card' style='min-height:auto;padding:.75rem 1rem;margin-bottom:.45rem'><b>{skill}</b><span style='float:right;color:{colour};font-weight:700'>{status}</span></div>", unsafe_allow_html=True)
-        report = f"CareerPath AI Skill Report\nGenerated: {date.today()}\n\nTarget role: {career}\nReadiness: {readiness}%\n\nStrengths: {', '.join(have) or 'None'}\nPriority gaps: {', '.join(gaps) or 'None'}\n\nNext step: Follow the personalised six-month roadmap."
+        report = f"CareerPulse Skill Report\nGenerated: {date.today()}\n\nTarget role: {career}\nReadiness: {readiness}%\n\nStrengths: {', '.join(have) or 'None'}\nPriority gaps: {', '.join(gaps) or 'None'}\n\nNext step: Follow the personalised six-month roadmap."
         st.download_button("Download skill-gap report", report, file_name=f"careerpath_{career.lower().replace(' ', '_')}_report.txt", mime="text/plain")
 
 with tabs[3]:
@@ -390,6 +688,14 @@ with tabs[3]:
             done = number in st.session_state.completed
             mark = "✅ Completed" if done else "Next milestone"
             st.markdown(f"<div class='roadmap-card'><div class='month'>Month {number} · {phase}</div><h3>{focus}</h3><p class='small'>{detail}</p><p><b>Proof of work:</b> {project}</p><span class='chip {'have' if done else 'neutral'}'>{mark}</span></div>", unsafe_allow_html=True)
+            resources = roadmap_learning_resources(career, focus)
+            st.markdown("<div class='learning-heading'>Recommended learning</div><div class='learning-grid'>", unsafe_allow_html=True)
+            resource_cards = []
+            for resource in resources:
+                watch_url = resource.get("url") or f"https://www.youtube.com/watch?v={resource['video_id']}"
+                thumbnail = resource.get("thumbnail") or (f"https://img.youtube.com/vi/{resource['video_id']}/hqdefault.jpg" if resource.get("video_id") else "https://placehold.co/640x360/eef1ff/4f46e5?text=YouTube+Learning")
+                resource_cards.append(f"<article class='learning-card'><img src='{thumbnail}' alt='Thumbnail for {resource['title']}'><div class='learning-body'><div class='learning-title'>{resource['title']}</div><div class='learning-channel'>{resource['channel']}</div><div class='learning-description'>{resource['description']}</div><a class='learning-link' href='{watch_url}' target='_blank' rel='noopener noreferrer'>Watch on YouTube ↗</a></div></article>")
+            st.markdown("".join(resource_cards) + "</div>", unsafe_allow_html=True)
         st.markdown("</div>", unsafe_allow_html=True)
         st.markdown("### Recommended certifications")
         st.markdown("<div class='notice'><b>How to use this list:</b> These are curated learning and certification options for this path. Details below come from the provider pages linked in the app. Prices, availability and objectives can change—always confirm them with the provider before paying.</div>", unsafe_allow_html=True)
@@ -440,24 +746,33 @@ with tabs[4]:
         questions = assessment_questions(career)
         if result and result["career"] == career:
             score = result["score"]
+            incorrect = result["total"] - result["correct"]
+            performance, performance_note, performance_kind = mock_performance(score)
             if score >= 80:
                 label, message, kind = "Resume skills verified", "Strong evidence that your claimed core skills are ready to discuss in an interview.", "have"
             elif score >= 50:
                 label, message, kind = "Partially verified", "You have a good base. Review the missed concepts before adding strong proficiency claims to your resume.", "neutral"
             else:
                 label, message, kind = "Needs strengthening", "Use the roadmap to rebuild the foundations before presenting these skills as strengths.", "gap"
-            left, right = st.columns([.85, 1.15], gap="large")
-            with left:
-                st.markdown(f"<div class='card'><div class='metric-label'>Verification score</div><div class='metric-value'>{score}%</div><div class='metric-note'>{result['correct']} / {result['total']} correct</div></div>", unsafe_allow_html=True)
-                st.progress(score / 100)
-            with right:
-                st.markdown(f"#### <span class='chip {kind}'>{label}</span>", unsafe_allow_html=True)
-                st.write(message)
-                with st.expander("Review answers and explanations"):
-                    for skill, (_, _, correct, explanation) in questions:
-                        selected = result["answers"][skill]
-                        icon = "✅" if selected == correct else "❌"
-                        st.markdown(f"{icon} **{skill}:** Correct answer — **{correct}**. {explanation}")
+            st.markdown(f"""<div class='mock-summary'>
+                <div class='mock-score-card'><div class='mock-label'>Your score</div><div class='mock-score'>{score}%</div><div class='mock-result-note'><b>{performance}</b> · {performance_note}</div></div>
+                <div class='mock-stat-card'><div class='mock-label'>Correct</div><div class='mock-stat-value'>{result['correct']}</div><div class='mock-stat-note'>answers</div></div>
+                <div class='mock-stat-card'><div class='mock-label'>Incorrect</div><div class='mock-stat-value'>{incorrect}</div><div class='mock-stat-note'>answers</div></div>
+                <div class='mock-stat-card'><div class='mock-label'>Total</div><div class='mock-stat-value'>{result['total']}</div><div class='mock-stat-note'>questions</div></div>
+            </div>""", unsafe_allow_html=True)
+            st.progress(score / 100)
+            st.markdown(f"#### <span class='chip {performance_kind}'>{performance}</span> <span class='chip {kind}'>{label}</span>", unsafe_allow_html=True)
+            st.write(message)
+            st.markdown("### Question review")
+            with st.expander("Review answers and explanations", expanded=True):
+                for number, (skill, (_, _, correct, explanation)) in enumerate(questions, 1):
+                    selected = result["answers"][skill]
+                    is_correct = selected == correct
+                    state = "Correct" if is_correct else "Incorrect"
+                    state_class = "correct" if is_correct else "incorrect"
+                    selected_text = f"Your answer: {selected}"
+                    correct_text = "" if is_correct else f" · Correct answer: {correct}"
+                    st.markdown(f"<div class='question-review {state_class}'><span class='question-review-state {state_class}'>{'✓' if is_correct else '✕'} {state}</span><div class='question-review-title'>Question {number} · {skill}</div><div class='question-review-answer'>{selected_text}{correct_text}</div><div class='question-review-answer'>{explanation}</div></div>", unsafe_allow_html=True)
 
 with tabs[5]:
     hero("Build momentum. Become internship ready.", "Track visible progress through your roadmap and the final actions that turn learning into opportunities.")
@@ -489,7 +804,7 @@ with tabs[5]:
 with tabs[6]:
     hero("Make your resume easier to trust.", "A transparent, role-aware checklist that turns your current resume into stronger interview evidence.")
     if not st.session_state.analysed:
-        show_empty("Your resume review will appear here", "Analyse a resume first so CareerPath can tailor the review to a target role.")
+        show_empty("Your resume review will appear here", "Analyse a resume first so CareerPulse can tailor the review to a target role.")
     else:
         career = st.session_state.selected_career
         score, suggestions, checks = resume_coach(st.session_state.raw_resume_text, career)
@@ -519,7 +834,7 @@ with tabs[7]:
         career = st.session_state.selected_career
         _, have, gaps, _ = gap_data(career)
         blueprint = capstone_blueprint(career, have, gaps)
-        st.markdown(f"<div class='notice'><b>CareerPath evidence engine:</b> Rather than only recommending courses, this converts the target role and your gaps into a project a reviewer can inspect.</div>", unsafe_allow_html=True)
+        st.markdown(f"<div class='notice'><b>CareerPulse evidence engine:</b> Rather than only recommending courses, this converts the target role and your gaps into a project a reviewer can inspect.</div>", unsafe_allow_html=True)
         st.markdown(f"### {blueprint['title']}")
         left, right = st.columns(2, gap="large")
         with left:
@@ -534,7 +849,7 @@ with tabs[7]:
             for item in blueprint["deliverables"]:
                 st.markdown(f"- {item}")
         st.markdown("#### Judge-ready project narrative")
-        st.info("“CareerPath does not stop at a score. It identifies a gap, prescribes a focused learning path, and asks the student to produce inspectable evidence before claiming readiness.”")
+        st.info("“CareerPulse does not stop at a score. It identifies a gap, prescribes a focused learning path, and asks the student to produce inspectable evidence before claiming readiness.”")
 
 # Kept at the end of the script so the modal overlays the fully rendered app.
 if st.session_state.resume_received and not st.session_state.analysed and st.session_state.show_mock:
